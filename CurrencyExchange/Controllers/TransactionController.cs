@@ -54,17 +54,22 @@ namespace CurrencyExchange.Controllers
             {
                 _context.UserWallets.Add(new UserWallet
                 {
+                    User = user,
                     UserId = user.Id,
+                    Currency = toCurrency,
+                    Amount = toAmount,
                     CurrencyId = toCurrencyId,
-                    Amount = toAmount
                 });
             }
 
             _context.Transactions.Add(new Transaction
             {
-                UserId = user.Id,
+                User = user,
+                UserId=user.Id,
                 FromCurrencyId = fromCurrencyId,
+                FromCurrency = fromCurrency,
                 ToCurrencyId = toCurrencyId,
+                ToCurrency = toCurrency,
                 FromAmount = amount,
                 ToAmount = toAmount,
                 ExchangeRate = exchangeRate,
@@ -91,13 +96,20 @@ namespace CurrencyExchange.Controllers
             var walletEntry = await _context.UserWallets
                 .FirstOrDefaultAsync(w => w.UserId == user.Id && w.CurrencyId == currencyId);
 
+            var toCurrency = await _context.Currencies.FindAsync(currencyId);
+            if (toCurrency == null)
+            {
+                return BadRequest("Invalid transaction.");
+            }
             if (walletEntry == null)
             {
                 _context.UserWallets.Add(new UserWallet
                 {
+                    User = user,
                     UserId = user.Id,
+                    Currency = toCurrency,
+                    Amount = amount,
                     CurrencyId = currencyId,
-                    Amount = amount
                 });
             }
             else
@@ -116,13 +128,11 @@ namespace CurrencyExchange.Controllers
             {
                 return Unauthorized("User not found.");
             }
-            var fromCurrency = await _context.Currencies.FindAsync(fromCurrencyId);
-            var toCurrency = await _context.Currencies.FindAsync(toCurrencyId);
 
             var transactions = await _context.Transactions
                 .Where(t => t.UserId == user.Id)
-                .Include(t => FromCurrency)  
-                .Include(t => ToCurrency)    
+                .Include(t => t.FromCurrencyId)  
+                .Include(t => t.ToCurrencyId)    
                 .ToListAsync();
 
             return View(transactions);

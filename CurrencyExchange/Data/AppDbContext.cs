@@ -10,9 +10,7 @@ namespace CurrencyExchange.Data
     public class AppDbContext : IdentityDbContext<IdentityUser>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
-        {
-        }
+            : base(options){}
         public DbSet<Currency> Currencies { get; set; }
         public DbSet<UserWallet> UserWallets { get; set; }
         public DbSet<Transaction> Transactions { get; set; }

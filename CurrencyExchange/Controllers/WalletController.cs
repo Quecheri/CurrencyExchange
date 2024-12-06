@@ -1,63 +1,84 @@
 ﻿using Currency_exchange.Models;
 using CurrencyExchange.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace CurrencyExchange.Controllers
 {
     public class WalletController : Controller
     {
         private readonly AppDbContext _context;
-
-        public WalletController(AppDbContext context)
+        private readonly UserManager<IdentityUser> _userManager;
+        public WalletController(AppDbContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         public async Task<IActionResult> Index()
         {
-            // Pobieranie aktualnego użytkownika
-            var userId = User. id; // Załóżmy, że nazwa użytkownika jest unikalnym identyfikatorem
-            if (userId == null)
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            // Pobieranie portfela użytkownika
+
             var userWallet = await _context.UserWallets
-                .Include(uw => uw.Currency) // Dołączenie informacji o walucie
-                .Where(uw => uw.UserId == userId)
+                .Include(uw => uw.Currency)
+                .Where(uw => uw.UserId == user.Id)
                 .ToListAsync();
 
-            // Pobranie listy dostępnych walut do ViewBag
+
             ViewBag.Currencies = await _context.Currencies.ToListAsync();
 
             return View(userWallet);
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddToWallet(int currencyId, decimal amount)
+        public async Task<IActionResult> AddToWallet(int currencyId, string amount)
         {
-            var userId = User.Identity.Name;
-            if (userId == null)
+            amount = amount.Replace(",", ".");
+
+            if (!decimal.TryParse(amount, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal parsedAmount))
+            {
+                ModelState.AddModelError(string.Empty, "Invalid amount format. Please use a valid number format.");
+                return View();
+            }
+            if (parsedAmount <= 0)
+            {
+                ModelState.AddModelError(string.Empty, "Amount must be greater than zero.");
+                return View();
+            }
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
                 return RedirectToAction("Login", "Account");
             }
-
+            var currency = await _context.Currencies.FindAsync(currencyId);
+            if (currency == null)
+            {
+                return BadRequest("Currency not found.");
+            }
             var walletEntry = await _context.UserWallets
-                .FirstOrDefaultAsync(w => w.UserId == userId && w.CurrencyId == currencyId);
+                .FirstOrDefaultAsync(w => w.UserId == user.Id && w.CurrencyId == currencyId);
 
             if (walletEntry != null)
             {
-                walletEntry.Amount += amount;
+                walletEntry.Amount += parsedAmount;
             }
             else
             {
                 _context.UserWallets.Add(new UserWallet
                 {
-                    UserId = userId,
+                    User = user,
+                    UserId = user.Id,
+                    Currency = currency,
+                    Amount = parsedAmount,
                     CurrencyId = currencyId,
-                    Amount = amount
                 });
             }
 
