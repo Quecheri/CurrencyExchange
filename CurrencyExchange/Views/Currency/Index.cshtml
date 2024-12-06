@@ -1,0 +1,43 @@
+﻿@using Currency_exchange.Models
+@{
+    ViewData["Title"] = "Currency Rates";
+}
+
+@model IEnumerable<Currency>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Currency Rates</h2>
+        @if (User.Identity.IsAuthenticated)
+        {
+            <div class="mb-3">
+                <form asp-action="UpdateRates" method="post">
+                    <button type="submit" class="btn btn-primary">Update Currency Rates</button>
+                </form>
+            </div>
+        }
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Currency Name</th>
+                    <th scope="col">Code</th>
+                    <th scope="col">Rate</th>
+                    <th scope="col">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var currency in Model)
+                {
+                    <tr>
+                        <td>@currency.Name</td>
+                        <td>@currency.Code</td>
+                        <td>@string.Format("{0:F2}", currency.CurrentRate)</td>
+                        <td>@currency.RateDate.ToString("yyyy-MM-dd HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

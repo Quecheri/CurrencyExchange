@@ -1,0 +1,29 @@
+﻿@using Currency_exchange.Models
+@{
+    ViewData["Title"] = "Transactions";
+}
+@model IEnumerable<Transaction>
+
+<table>
+    <tr>
+        <th>Waluta źródłowa</th>
+        <th>Kwota</th>
+        <th>Waluta docelowa</th>
+        <th>Kwota</th>
+        <th>Kurs</th>
+        <th>Data</th>
+    </tr>
+    @foreach (var transaction in Model)
+    {
+        <tr>
+            <td>@transaction.FromCurrency.Code</td>
+            <td>@transaction.FromAmount</td>
+            <td>@transaction.ToCurrency.Code</td>
+            <td>@transaction.ToAmount</td>
+            <td>@transaction.ExchangeRate</td>
+            <td>@transaction.TransactionDate</td>
+        </tr>
+    }
+    }
+</table>
+

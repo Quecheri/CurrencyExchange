@@ -1,0 +1,30 @@
+﻿@using Currency_exchange.Models
+@model IEnumerable<Transaction>
+@{
+    ViewData["Title"] = "Transaction History";
+}
+
+<h2>Transaction History</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Amount</th>
+            <th>Exchange Rate</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var transaction in Model)
+        {
+            <tr>
+                <td>@transaction.TransactionDate.ToLocalTime()</td>
+                <td>@transaction.FromAmount @transaction.FromCurrency?.Code</td>
+                <td>@transaction.ToAmount @transaction.ToCurrency?.Code</td>
+                <td>@transaction.ExchangeRate</td>
+            </tr>
+        }
+    </tbody>
+</table>

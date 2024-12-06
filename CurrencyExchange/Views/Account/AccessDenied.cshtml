@@ -1,0 +1,26 @@
+﻿@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<h2 class="text-center mb-4 text-danger"><i class="bi bi-shield-exclamation"></i> Access Denied</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-danger">
+            <div class="card-body text-center">
+                <p class="mb-3">
+                    You don't have required permissions
+                    @if (User.Identity.IsAuthenticated)
+                    {<strong>@User.Identity.Name</strong>}
+                    else
+                    {<strong>Guest</strong>}
+                </p>
+                <p>What would you like to do?</p>
+                <div class="d-grid gap-2">
+                    <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Go Home</a>
+                    <a class="btn btn-danger" asp-controller="Account" asp-action="Logout">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
