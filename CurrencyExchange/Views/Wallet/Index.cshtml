@@ -2,9 +2,19 @@
 @model IEnumerable<UserWallet>
 @{
     ViewData["Title"] = "Wallet";
+    var fromAmountValue = ViewData["SelectedCurrencyId"] as string ?? string.Empty;
 }
 
 <h2>Your Wallet</h2>
+@if (!ViewData.ModelState.IsValid)
+{
+    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+    {
+        <div class="alert alert-danger" role="alert">
+            @error.ErrorMessage
+        </div>
+    }
+}
 @if (Model == null || !Model.Any())
 {
     <p>Your wallet is empty. Start by adding some currencies.</p>
@@ -26,44 +36,116 @@ else
                     <td>@item.Currency.Code</td>
                     <td>@item.Amount</td>
                     <td>
-                        <a asp-action="Exchange" asp-controller="Transaction" asp-route-fromCurrencyId="@item.CurrencyId" class="btn btn-sm btn-outline-primary">
+                        <a asp-action="Exchange"
+                           asp-controller="Transaction"
+                           asp-route-fromCurrencyId="@item.CurrencyId"
+                           class="btn btn-sm btn-outline-primary">
                             Exchange
                         </a>
                     </td>
-
                 </tr>
             }
         </tbody>
     </table>
 }
 
+<div class="mt-4 text-center">
+    <button id="showDeposit" class="btn btn-success">Deposit</button>
+    <button id="showWithdraw" class="btn btn-danger">Withdraw</button>
+</div>
 
-<h3>Add Currency to Wallet</h3>
-<form asp-action="AddToWallet" method="post">
-    <div class="mb-3">
-        <label for="currency" class="form-label">Currency:</label>
-        <select id="currency" name="currencyId" class="form-select" required>
-            <option value="">-- Select Currency --</option>
-            @foreach (var currency in ViewBag.Currencies)
-            {
-                <option value="@currency.Id">@currency.Code</option>
-            }
-        </select>
-    </div>
 
-    <div class="mb-3">
-        <label for="amount" class="form-label">Amount:</label>
-        <input type="number" id="amount" name="amount" class="form-control" step="0.01" required min="0.01" />
-    </div>
-
-    @if (!ViewData.ModelState.IsValid)
-    {
-        <div class="alert alert-danger">
-            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-            {
-                <p>@error.ErrorMessage</p>
-            }
+<div id="depositForm" class="mt-4" style="display: none;">
+    <h3>Deposit Currency</h3>
+    <form asp-action="AddToWallet" method="post">
+        <div class="mb-3">
+            <label for="currencyDeposit" class="form-label">Currency:</label>
+            <select id="currencyDeposit" name="currencyId" class="form-select" required>
+                <option value="">-- Select Currency --</option>
+                @foreach (var currency in ViewBag.Currencies)
+                {
+                    <option value="@currency.Id">@currency.Code</option>
+                }
+            </select>
         </div>
-    }
-    <button type="submit" class="btn btn-primary">Add</button>
-</form>
+        <div class="mb-3">
+            <label for="depositAmount" class="form-label">Amount:</label>
+            <input type="number" id="depositAmount" name="amount" class="form-control" step="0.01" required min="0.01" />
+        </div>
+        <button type="submit" class="btn btn-success">Deposit</button>
+    </form>
+</div>
+
+
+<div id="withdrawForm" class="mt-4" style="@(ViewBag.ShowWithdrawForm == true ? "display: block;" : "display: none;")">
+    <h3>Withdraw Currency</h3>
+    <form asp-action="WithdrawFromWallet" method="post">
+        <div class="mb-3">
+            <label for="currencyWithdraw" class="form-label">Currency:</label>
+            <select id="currencyWithdraw" name="currencyId" class="form-select" required>
+                <option value="">-- Select Currency --</option>
+                @foreach (var walletItem in Model)
+                {
+                    <option value="@walletItem.CurrencyId" data-max="@walletItem.Amount" selected="@(walletItem.CurrencyId == ViewBag.SelectedCurrencyId ? true : false)">
+                        @walletItem.Currency.Code (@walletItem.Amount)
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="withdrawAmount" class="form-label">Amount:</label>
+            <input type="number" id="withdrawAmount" name="amount" class="form-control" step="0.01" required min="0.01" max="@(ViewBag.MaxWithdrawAmount ?? "")" />
+            <small class="text-muted" id="maxAmountNotice"></small>
+        </div>
+        <button type="submit" class="btn btn-danger">Withdraw</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const depositForm = document.getElementById("depositForm");
+        const withdrawForm = document.getElementById("withdrawForm");
+        const showDepositButton = document.getElementById("showDeposit");
+        const showWithdrawButton = document.getElementById("showWithdraw");
+        const currencySelect = document.getElementById("currencyWithdraw");
+        const amountInput = document.getElementById("withdrawAmount");
+        const maxAmountNotice = document.getElementById("maxAmountNotice");
+
+        function updateMaxAmount() {
+            const selectedOption = currencySelect.options[currencySelect.selectedIndex];
+            const maxAmount = selectedOption.dataset.max;
+
+            if (maxAmount) {
+                amountInput.max = maxAmount;
+                maxAmountNotice.textContent = `Maximum amount: ${maxAmount}`;
+            } else {
+                amountInput.max = "";
+                maxAmountNotice.textContent = "";
+            }
+        }
+
+        currencySelect.addEventListener("change", updateMaxAmount);
+
+        showDepositButton.addEventListener("click", function () {
+            depositForm.style.display = "block";
+            withdrawForm.style.display = "none";
+        });
+
+        showWithdrawButton.addEventListener("click", function () {
+            withdrawForm.style.display = "block";
+            depositForm.style.display = "none";
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const showWithdrawForm = "@ViewBag.ShowWithdrawForm" === "True";
+            if (showWithdrawForm) {
+                document.getElementById("withdrawForm").style.display = "block";
+                document.getElementById("depositForm").style.display = "none";
+            }
+        });
+
+        currencySelect.addEventListener("change", updateMaxAmount);
+
+        updateMaxAmount();
+    });
+</script>

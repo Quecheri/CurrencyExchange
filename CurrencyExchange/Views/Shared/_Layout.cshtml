@@ -20,13 +20,13 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <!-- Home -->
+                     
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
                                 <i class="bi bi-house-door"></i> Home
                             </a>
                         </li>
-                        <!-- Currency Rates -->
+                        
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Currency" asp-action="Index">
                                 <i class="bi bi-currency-exchange"></i> Currency Rates
@@ -34,21 +34,21 @@
                         </li>
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
-                            <!-- Wallet -->
+                         
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Wallet" asp-action="Index">
                                     <i class="bi bi-wallet2"></i> My Wallet
                                 </a>
                             </li>
-                            <!-- Transactions -->
+                            
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Transaction" asp-action="History">
                                     <i class="bi bi-journal-text"></i> Transactions
                                 </a>
                             </li>
-                            <!-- Exchange -->
+                           
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Transaction" asp-action="Exchange">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Transaction" asp-action="Exchange_base">
                                     <i class="bi bi-arrow-left-right"></i> Exchange
                                 </a>
                             </li>
@@ -57,7 +57,7 @@
                     <ul class="navbar-nav">
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
-                            <!-- User Dropdown -->
+                            
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-person-circle"></i> @User.Identity.Name
@@ -73,13 +73,13 @@
                         }
                         else
                         {
-                            <!-- Login -->
+
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">
                                     <i class="bi bi-box-arrow-in-right"></i> Login
                                 </a>
                             </li>
-                            <!-- Register -->
+
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register">
                                     <i class="bi bi-person-plus"></i> Register

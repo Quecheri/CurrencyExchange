@@ -21,7 +21,7 @@ namespace CurrencyExchange.Controllers
             _userManager = userManager;
         }
 
-        public async Task<IActionResult> Exchange()
+        public async Task<IActionResult> Exchange(string fromCurrencyId)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -38,8 +38,28 @@ namespace CurrencyExchange.Controllers
 
             ViewBag.UserWallet = wallet;
             ViewBag.Currencies = currencies;
+            ViewData["fromCurrencyId"] = fromCurrencyId;
 
             return View();
+        }
+        public async Task<IActionResult> Exchange_base()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var wallet = await _context.UserWallets
+                .Include(w => w.Currency)
+                .Where(w => w.UserId == user.Id)
+                .ToListAsync();
+
+            var currencies = await _context.Currencies.ToListAsync();
+
+            ViewBag.UserWallet = wallet;
+            ViewBag.Currencies = currencies;
+            return View("Exchange");
         }
 
         [HttpPost]
@@ -64,24 +84,24 @@ namespace CurrencyExchange.Controllers
             ViewData["toCurrencyId"] = toCurrencyId.ToString();
             ViewData["amountStr"] = amountStr;
 
-
+            if (amountStr == null) amountStr = "0";
             amountStr = amountStr.Replace(",", ".");
             if (!decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal amount))
             {
                 ModelState.AddModelError("amountStr", "Invalid amount format. Please use a valid number format.");
-                return View();  // Nie przekierowuj, tylko zwróć widok z błędami
+                return View();
             }
 
             if (fromCurrencyId == toCurrencyId)
             {
                 ModelState.AddModelError("fromCurrencyId", "Cannot exchange the same currency.");
-                return View();  // Nie przekierowuj, tylko zwróć widok z błędami
+                return View();
             }
 
             if (amount <= 0)
             {
                 ModelState.AddModelError("amountStr", "Amount must be greater than zero.");
-                return View();  // Nie przekierowuj, tylko zwróć widok z błędami
+                return View();
             }
 
             var fromCurrency = await _context.Currencies.FindAsync(fromCurrencyId);
@@ -96,7 +116,7 @@ namespace CurrencyExchange.Controllers
             if (walletFrom == null || walletFrom.Amount < amount)
             {
                 ModelState.AddModelError("amountStr", "Insufficient funds.");
-                return View();  // Nie przekierowuj, tylko zwróć widok z błędami
+                return View();
             }
 
             decimal exchangeRate = toCurrency.CurrentRate / fromCurrency.CurrentRate;
@@ -137,6 +157,8 @@ namespace CurrencyExchange.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction("Index", "Wallet");
         }
+
+        
         [HttpGet]
         [Route("api/rate")]
         public async Task<IActionResult> GetExchangeRate(int fromCurrencyId, int toCurrencyId)
@@ -152,7 +174,6 @@ namespace CurrencyExchange.Controllers
             var exchangeRate = toCurrency.CurrentRate / fromCurrency.CurrentRate;
             return Json(exchangeRate);
         }
-
 
         public async Task<IActionResult> History()
         {
