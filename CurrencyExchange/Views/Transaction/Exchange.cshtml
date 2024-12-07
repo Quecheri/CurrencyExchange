@@ -2,20 +2,32 @@
     ViewData["Title"] = "Exchange Currency";
     var wallet = ViewBag.UserWallet as List<Currency_exchange.Models.UserWallet>;
     var currencies = ViewBag.Currencies as List<Currency_exchange.Models.Currency>;
+    var fromCurrencyValue = ViewData["fromCurrencyId"] as string ?? string.Empty;
+    var toCurrencyValue = ViewData["toCurrencyId"] as string ?? string.Empty;
+    var fromAmountValue = ViewData["amountStr"] as string ?? string.Empty;
 }
 
 <h2>Exchange Currency</h2>
 
+@if (!ViewData.ModelState.IsValid)
+{
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @error.ErrorMessage
+                </div>
+            }
+}
+
 <form asp-action="Exchange" method="post">
     <div class="row">
-        <!-- Waluta źródłowa -->
         <div class="col-md-4">
             <label for="fromCurrency">From Currency</label>
             <select id="fromCurrency" name="fromCurrencyId" class="form-control" required>
                 <option value="">-- Select Currency --</option>
                 @foreach (var currency in wallet)
                 {
-                    <option value="@currency.CurrencyId">@currency.Currency.Code (@currency.Amount)</option>
+                    <option value="@currency.CurrencyId" selected="@(currency.CurrencyId.ToString() == fromCurrencyValue ? true : false)">@currency.Currency.Code (@currency.Amount)</option>
                 }
             </select>
         </div>
@@ -29,11 +41,11 @@
         <!-- Waluta docelowa -->
         <div class="col-md-4">
             <label for="toCurrency">To Currency</label>
-            <select id="toCurrency" name="toCurrencyId" class="form-control" required>
+            <select id="toCurrency" name="toCurrencyId" class="form-control"  required>
                 <option value="">-- Select Currency --</option>
                 @foreach (var currency in currencies)
                 {
-                    <option value="@currency.Id">@currency.Code</option>
+                    <option value="@currency.Id" selected="@(currency.Id.ToString() == toCurrencyValue ? true : false)">@currency.Code</option>
                 }
             </select>
         </div>
@@ -42,7 +54,7 @@
     <div class="row mt-3">
         <div class="col-md-6">
             <label for="fromAmount">Amount to Exchange</label>
-            <input id="fromAmount" name="amountStr" type="number" class="form-control" min="0" step="0.01" />
+            <input id="fromAmount" name="amountStr" type="number" class="form-control" min="0" step="0.01" value="@fromAmountValue" required />
         </div>
 
         <div class="col-md-6">
@@ -66,6 +78,7 @@
         const fromAmount = document.getElementById("fromAmount");
         const toAmount = document.getElementById("toAmount");
 
+        // Funkcja, która aktualizuje kurs wymiany
         async function updateExchangeRate() {
             const fromCurrencyId = fromCurrency.value;
             const toCurrencyId = toCurrency.value;
@@ -74,28 +87,36 @@
                 try {
                     const response = await fetch(`/api/rate?fromCurrencyId=${fromCurrencyId}&toCurrencyId=${toCurrencyId}`);
                     const rate = await response.json();
-                    exchangeRate.value = rate.toFixed(4);
-                    calculateToAmount();
+                    if (!isNaN(rate)) {
+                        exchangeRate.value = rate.toFixed(4);
+                        calculateToAmount(); // Oblicz kwotę w docelowej walucie po pobraniu kursu
+                    } else {
+                        console.error("Invalid exchange rate received.");
+                        exchangeRate.value = ""; // Jeżeli kurs jest niepoprawny, zostaw puste pole
+                    }
                 } catch (error) {
                     console.error("Failed to fetch exchange rate", error);
                 }
             }
         }
 
+        // Funkcja do obliczenia kwoty w docelowej walucie
         function calculateToAmount() {
             const rate = parseFloat(exchangeRate.value);
             const amount = parseFloat(fromAmount.value);
             if (!isNaN(rate) && !isNaN(amount)) {
-                toAmount.value = (amount * rate).toFixed(2);
+                toAmount.value = (amount * rate).toFixed(2); // Oblicz wartość w docelowej walucie
             } else {
-                toAmount.value = "";
+                toAmount.value = ""; // Jeśli coś jest niepoprawne, zostaw puste pole
             }
         }
 
+        // Wydarzenie, które aktualizuje kurs po zmianie wybranej waluty
         fromCurrency.addEventListener("change", updateExchangeRate);
         toCurrency.addEventListener("change", updateExchangeRate);
         fromAmount.addEventListener("input", calculateToAmount);
 
+        // Inicjalizuj obliczenia przy załadowaniu strony, aby wyświetlić początkowy kurs wymiany
         updateExchangeRate();
     });
 </script>

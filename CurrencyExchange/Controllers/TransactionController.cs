@@ -45,30 +45,43 @@ namespace CurrencyExchange.Controllers
         [HttpPost]
         public async Task<IActionResult> Exchange(int fromCurrencyId, int toCurrencyId, string amountStr)
         {
-
-            amountStr = amountStr.Replace(",", ".");
-            if (!decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal amount))
-            {
-                ModelState.AddModelError(string.Empty, "Invalid amount format. Please use a valid number format.");
-                return View();
-            }
-
-            if (fromCurrencyId == toCurrencyId)
-            {
-                ModelState.AddModelError(string.Empty, "Cannot exchange the same currency.");
-                return RedirectToAction("Exchange", new { fromCurrencyId });
-            }
-
-            if (amount <= 0)
-            {
-                ModelState.AddModelError(string.Empty, "Amount must be greater than zero.");
-                return RedirectToAction("Exchange", new { fromCurrencyId });
-            }
-
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
                 return RedirectToAction("Login", "Account");
+            }
+
+            var wallet = await _context.UserWallets
+                .Include(w => w.Currency)
+                .Where(w => w.UserId == user.Id)
+                .ToListAsync();
+
+            var currencies = await _context.Currencies.ToListAsync();
+
+            ViewBag.UserWallet = wallet;
+            ViewBag.Currencies = currencies;
+            ViewData["fromCurrencyId"] = fromCurrencyId.ToString();
+            ViewData["toCurrencyId"] = toCurrencyId.ToString();
+            ViewData["amountStr"] = amountStr;
+
+
+            amountStr = amountStr.Replace(",", ".");
+            if (!decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal amount))
+            {
+                ModelState.AddModelError("amountStr", "Invalid amount format. Please use a valid number format.");
+                return View();  // Nie przekierowuj, tylko zwróć widok z błędami
+            }
+
+            if (fromCurrencyId == toCurrencyId)
+            {
+                ModelState.AddModelError("fromCurrencyId", "Cannot exchange the same currency.");
+                return View();  // Nie przekierowuj, tylko zwróć widok z błędami
+            }
+
+            if (amount <= 0)
+            {
+                ModelState.AddModelError("amountStr", "Amount must be greater than zero.");
+                return View();  // Nie przekierowuj, tylko zwróć widok z błędami
             }
 
             var fromCurrency = await _context.Currencies.FindAsync(fromCurrencyId);
@@ -82,8 +95,8 @@ namespace CurrencyExchange.Controllers
 
             if (walletFrom == null || walletFrom.Amount < amount)
             {
-                ModelState.AddModelError(string.Empty, "Insufficient funds.");
-                return RedirectToAction("Exchange", new { fromCurrencyId });
+                ModelState.AddModelError("amountStr", "Insufficient funds.");
+                return View();  // Nie przekierowuj, tylko zwróć widok z błędami
             }
 
             decimal exchangeRate = toCurrency.CurrentRate / fromCurrency.CurrentRate;
@@ -103,7 +116,7 @@ namespace CurrencyExchange.Controllers
                     UserId = user.Id,
                     Currency = toCurrency,
                     CurrencyId = toCurrencyId,
-                    Amount = exchangedAmount,                     
+                    Amount = exchangedAmount,
                 });
             }
 
