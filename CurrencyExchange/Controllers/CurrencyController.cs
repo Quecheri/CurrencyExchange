@@ -1,4 +1,5 @@
-﻿using CurrencyExchange.Data;
+﻿using Currency_exchange.Models;
+using CurrencyExchange.Data;
 using CurrencyExchange.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,7 +24,14 @@ namespace CurrencyExchange.Controllers
 
         public IActionResult Index()
         {
-            var currencies = _context.Currencies.ToList();
+            var prioritizedCurrencies = new[] { "PLN", "USD", "EUR", "JPY", "GBP", "CHF", "CZK","NOK","DKK","SEK","HUF"};
+
+            var currencies = _context.Currencies
+                .ToList()
+                .OrderBy(c => Array.IndexOf(prioritizedCurrencies, c.Code) == -1 ? int.MaxValue : Array.IndexOf(prioritizedCurrencies, c.Code)) // Priorytetowe waluty
+                .ThenBy(c => c.Name) // Reszta alfabetycznie
+                .ToList();
+
             return View(currencies);
         }
 

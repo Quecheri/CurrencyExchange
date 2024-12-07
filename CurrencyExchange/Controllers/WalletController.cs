@@ -1,5 +1,6 @@
 ﻿using Currency_exchange.Models;
 using CurrencyExchange.Data;
+using CurrencyExchange.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -66,6 +67,9 @@ namespace CurrencyExchange.Controllers
             var walletEntry = await _context.UserWallets
                 .FirstOrDefaultAsync(w => w.UserId == user.Id && w.CurrencyId == currencyId);
 
+
+            decimal currentAmount = walletEntry?.Amount ?? 0;
+            decimal currenctRate = walletEntry?.Currency.CurrentRate ?? 0;
             if (walletEntry != null)
             {
                 walletEntry.Amount += parsedAmount;
@@ -81,7 +85,19 @@ namespace CurrencyExchange.Controllers
                     CurrencyId = currencyId,
                 });
             }
-
+            _context.Transactions.Add(new Transaction
+            {
+                UserId = user.Id,
+                Type = TransactionType.Deposit.ToString(),
+                FromCurrencyId = currencyId,
+                FromCurrency = currency,
+                ToCurrency  = currency,
+                ToCurrencyId = currencyId,  
+                FromAmount = currentAmount, 
+                ToAmount = currentAmount + parsedAmount,
+                ExchangeRate = 1,           
+                TransactionDate = DateTime.UtcNow
+            });
             await _context.SaveChangesAsync();
             return RedirectToAction("Index");
         }

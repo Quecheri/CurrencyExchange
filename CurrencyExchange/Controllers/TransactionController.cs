@@ -1,9 +1,11 @@
 ﻿using Currency_exchange.Models;
 using CurrencyExchange.Data;
+using CurrencyExchange.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace CurrencyExchange.Controllers
 {
@@ -19,36 +21,79 @@ namespace CurrencyExchange.Controllers
             _userManager = userManager;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Exchange(int fromCurrencyId, int toCurrencyId, decimal amount)
+        public async Task<IActionResult> Exchange()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Unauthorized("User not found.");
+                return RedirectToAction("Login", "Account");
+            }
+
+            var wallet = await _context.UserWallets
+                .Include(w => w.Currency)
+                .Where(w => w.UserId == user.Id)
+                .ToListAsync();
+
+            var currencies = await _context.Currencies.ToListAsync();
+
+            ViewBag.UserWallet = wallet;
+            ViewBag.Currencies = currencies;
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Exchange(int fromCurrencyId, int toCurrencyId, string amountStr)
+        {
+
+            amountStr = amountStr.Replace(",", ".");
+            if (!decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal amount))
+            {
+                ModelState.AddModelError(string.Empty, "Invalid amount format. Please use a valid number format.");
+                return View();
+            }
+
+            if (fromCurrencyId == toCurrencyId)
+            {
+                ModelState.AddModelError(string.Empty, "Cannot exchange the same currency.");
+                return RedirectToAction("Exchange", new { fromCurrencyId });
+            }
+
+            if (amount <= 0)
+            {
+                ModelState.AddModelError(string.Empty, "Amount must be greater than zero.");
+                return RedirectToAction("Exchange", new { fromCurrencyId });
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
             }
 
             var fromCurrency = await _context.Currencies.FindAsync(fromCurrencyId);
             var toCurrency = await _context.Currencies.FindAsync(toCurrencyId);
 
-            var userWallet = await _context.UserWallets.FirstOrDefaultAsync(w =>
-                w.UserId == user.Id && w.CurrencyId == fromCurrencyId);
+            var walletFrom = await _context.UserWallets
+                .FirstOrDefaultAsync(w => w.UserId == user.Id && w.CurrencyId == fromCurrencyId);
 
-            if (fromCurrency == null || toCurrency == null || userWallet == null || userWallet.Amount < amount)
+            var walletTo = await _context.UserWallets
+                .FirstOrDefaultAsync(w => w.UserId == user.Id && w.CurrencyId == toCurrencyId);
+
+            if (walletFrom == null || walletFrom.Amount < amount)
             {
-                return BadRequest("Invalid transaction.");
+                ModelState.AddModelError(string.Empty, "Insufficient funds.");
+                return RedirectToAction("Exchange", new { fromCurrencyId });
             }
 
-            var exchangeRate = fromCurrency.CurrentRate / toCurrency.CurrentRate;
-            var toAmount = amount * exchangeRate;
-            userWallet.Amount -= amount;
+            decimal exchangeRate = toCurrency.CurrentRate / fromCurrency.CurrentRate;
+            decimal exchangedAmount = amount * exchangeRate;
 
-            var toWallet = await _context.UserWallets.FirstOrDefaultAsync(w =>
-                w.UserId == user.Id && w.CurrencyId == toCurrencyId);
+            walletFrom.Amount -= amount;
 
-            if (toWallet != null)
+            if (walletTo != null)
             {
-                toWallet.Amount += toAmount;
+                walletTo.Amount += exchangedAmount;
             }
             else
             {
@@ -57,69 +102,44 @@ namespace CurrencyExchange.Controllers
                     User = user,
                     UserId = user.Id,
                     Currency = toCurrency,
-                    Amount = toAmount,
                     CurrencyId = toCurrencyId,
+                    Amount = exchangedAmount,                     
                 });
             }
 
             _context.Transactions.Add(new Transaction
             {
-                User = user,
-                UserId=user.Id,
+                UserId = user.Id,
+                Type = TransactionType.Exchange.ToString(),
                 FromCurrencyId = fromCurrencyId,
-                FromCurrency = fromCurrency,
                 ToCurrencyId = toCurrencyId,
+                FromCurrency = fromCurrency,
                 ToCurrency = toCurrency,
                 FromAmount = amount,
-                ToAmount = toAmount,
+                ToAmount = exchangedAmount,
                 ExchangeRate = exchangeRate,
                 TransactionDate = DateTime.UtcNow
             });
 
             await _context.SaveChangesAsync();
-            return Ok("Transaction successful.");
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> AddToWallet(int currencyId, decimal amount)
-        {
-            if (amount <= 0)
-            {
-                return BadRequest("Amount must be greater than zero.");
-            }
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Unauthorized("User not found.");
-            }
-
-            var walletEntry = await _context.UserWallets
-                .FirstOrDefaultAsync(w => w.UserId == user.Id && w.CurrencyId == currencyId);
-
-            var toCurrency = await _context.Currencies.FindAsync(currencyId);
-            if (toCurrency == null)
-            {
-                return BadRequest("Invalid transaction.");
-            }
-            if (walletEntry == null)
-            {
-                _context.UserWallets.Add(new UserWallet
-                {
-                    User = user,
-                    UserId = user.Id,
-                    Currency = toCurrency,
-                    Amount = amount,
-                    CurrencyId = currencyId,
-                });
-            }
-            else
-            {
-                walletEntry.Amount += amount;
-            }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction("Index", "Wallet");
         }
+        [HttpGet]
+        [Route("api/rate")]
+        public async Task<IActionResult> GetExchangeRate(int fromCurrencyId, int toCurrencyId)
+        {
+            var fromCurrency = await _context.Currencies.FindAsync(fromCurrencyId);
+            var toCurrency = await _context.Currencies.FindAsync(toCurrencyId);
+
+            if (fromCurrency == null || toCurrency == null)
+            {
+                return NotFound("One of the currencies was not found.");
+            }
+
+            var exchangeRate = toCurrency.CurrentRate / fromCurrency.CurrentRate;
+            return Json(exchangeRate);
+        }
+
 
         public async Task<IActionResult> History()
         {
@@ -131,8 +151,8 @@ namespace CurrencyExchange.Controllers
 
             var transactions = await _context.Transactions
                 .Where(t => t.UserId == user.Id)
-                .Include(t => t.FromCurrencyId)  
-                .Include(t => t.ToCurrencyId)    
+                .Include(t => t.FromCurrency)  
+                .Include(t => t.ToCurrency)    
                 .ToListAsync();
 
             return View(transactions);

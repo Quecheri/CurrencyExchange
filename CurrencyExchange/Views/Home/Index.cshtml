@@ -1,6 +1,10 @@
 ﻿@using CurrencyExchange.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+
 @{
     ViewData["Title"] = "Home Page";
+    bool isAuthenticated = SignInManager.IsSignedIn(User);
 }
 
 <div class="text-center">
@@ -8,84 +12,119 @@
     <p class="mb-4">Easily exchange and manage your currencies with our web application!</p>
 
     <div class="container">
-        <div class="row">
-            <!-- Kafelek: Kursy walut -->
-            <div class="col-md-4 mb-4">
-                <a href="/Currency" class="text-decoration-none">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Currency Rates</h5>
-                            <p class="card-text">Check the latest currency rates and their history.</p>
-                            <i class="bi bi-currency-exchange display-4"></i>
+        
+           
+            @if (isAuthenticated)
+            {
+            <div class="row justify-content-md-center">
+                <!-- Kafelek: Kursy walut -->
+                <div class="col-md mb-4 d-flex">
+                    <a href="/Currency" class="text-decoration-none w-100">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Currency Rates</h5>
+                                <p class="card-text">Check the latest currency rates and their history.</p>
+                                <i class="bi bi-currency-exchange display-4"></i>
+                            </div>
                         </div>
-                    </div>
-                </a>
-            </div>
+                    </a>
+                </div>
+                <!-- Kafelek: Portfel -->
+                <div class="col-md mb-4 d-flex">
+                    <a href="/Wallet" class="text-decoration-none w-100">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">My Wallet</h5>
+                                <p class="card-text">Manage your virtual wallet with multiple currencies.</p>
+                                <i class="bi bi-wallet2 display-4"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                </div>
+            <div class="row justify-content-md-center">
+                <!-- Kafelek: Historia transakcji -->
+                <div class="col-md mb-4 d-flex">
+                    <a href="/Transaction/History" class="text-decoration-none w-100">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Transaction History</h5>
+                                <p class="card-text">View your past transactions and analyze profits or losses.</p>
+                                <i class="bi bi-journal-text display-4"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
 
-            <!-- Kafelek: Portfel -->
-            <div class="col-md-4 mb-4">
-                <a href="/Wallet" class="text-decoration-none">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">My Wallet</h5>
-                            <p class="card-text">Manage your virtual wallet with multiple currencies.</p>
-                            <i class="bi bi-wallet2 display-4"></i>
+                <!-- Kafelek: Exchange -->
+                <div class="col-md mb-4 d-flex">
+                    <a href="Transaction/Exchange" class="text-decoration-none w-100">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Exchange</h5>
+                                <p class="card-text">Exchange currencies easily and quickly.</p>
+                                <i class="bi bi-arrow-left-right display-4"></i>
+                            </div>
                         </div>
-                    </div>
-                </a>
+                    </a>
+                </div>
+                </div>
+            }
+            else
+            {
+            <div class="row justify-content-md-center">
+                <!-- Kafelek: Kursy walut -->
+                <div class="col-md mb-4 d-flex">
+                    <a href="/Currency" class="text-decoration-none w-100">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Currency Rates</h5>
+                                <p class="card-text">Check the latest currency rates and their history.</p>
+                                <i class="bi bi-currency-exchange display-4"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <!-- Kafelek: Logowanie -->
+                <div class="col-md mb-4 d-flex">
+                    <a href="/Account/Login" class="text-decoration-none w-100">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Login</h5>
+                                <p class="card-text">Log in to access your account and manage transactions.</p>
+                                <i class="bi bi-person-circle display-4"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
             </div>
+            <div class="row justify-content-md-center">
+                <!-- Kafelek: Rejestracja -->
+                <div class="col-md mb-4 d-flex">
+                    <a href="/Account/Register" class="text-decoration-none w-100">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Register</h5>
+                                <p class="card-text">Create a new account to start managing your currencies.</p>
+                                <i class="bi bi-person-plus display-4"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
 
-            <!-- Kafelek: Historia transakcji -->
-            <div class="col-md-4 mb-4">
-                <a href="/Transaction/History" class="text-decoration-none">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Transaction History</h5>
-                            <p class="card-text">View your past transactions and analyze profits or losses.</p>
-                            <i class="bi bi-journal-text display-4"></i>
+                <!-- Kafelek: Pomoc -->
+                <div class="col-md mb-4 d-flex">
+                    <a href="/Home/Help" class="text-decoration-none w-100">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Help</h5>
+                                <p class="card-text">Learn how to use the platform and access support.</p>
+                                <i class="bi bi-question-circle display-4"></i>
+                            </div>
                         </div>
-                    </div>
-                </a>
+                    </a>
+                </div>
             </div>
-
-            <!-- Kafelek: Logowanie/Rejestracja -->
-            <div class="col-md-4 mb-4">
-                <a href="/Account/Login" class="text-decoration-none">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Login</h5>
-                            <p class="card-text">Log in to access your account and manage transactions.</p>
-                            <i class="bi bi-person-circle display-4"></i>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <!-- Kafelek: Rejestracja -->
-            <div class="col-md-4 mb-4">
-                <a href="/Account/Register" class="text-decoration-none">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Register</h5>
-                            <p class="card-text">Create a new account to start managing your currencies.</p>
-                            <i class="bi bi-person-plus display-4"></i>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <!-- Kafelek: Pomoc -->
-            <div class="col-md-4 mb-4">
-                <a href="/Home/Help" class="text-decoration-none">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Help</h5>
-                            <p class="card-text">Learn how to use the platform and access support.</p>
-                            <i class="bi bi-question-circle display-4"></i>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
+            }
     </div>
 </div>

@@ -16,6 +16,7 @@ else
             <tr>
                 <th>Currency</th>
                 <th>Amount</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -24,6 +25,12 @@ else
                 <tr>
                     <td>@item.Currency.Code</td>
                     <td>@item.Amount</td>
+                    <td>
+                        <a asp-action="Exchange" asp-controller="Transaction" asp-route-fromCurrencyId="@item.CurrencyId" class="btn btn-sm btn-outline-primary">
+                            Exchange
+                        </a>
+                    </td>
+
                 </tr>
             }
         </tbody>

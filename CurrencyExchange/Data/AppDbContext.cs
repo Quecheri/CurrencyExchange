@@ -56,6 +56,28 @@ namespace CurrencyExchange.Data
                 .HasForeignKey(t => t.ToCurrencyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+
+
+            modelBuilder.Entity<Currency>()
+                 .Property(c => c.CurrentRate)
+                 .HasPrecision(18, 12);
+
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.ExchangeRate)
+                .HasPrecision(18, 10);
+
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.FromAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.ToAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<UserWallet>()
+                .Property(u => u.Amount)
+                .HasPrecision(18, 2);
+
         }
     }
 }

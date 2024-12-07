@@ -10,6 +10,7 @@ namespace Currency_exchange.Models
     {
         public int Id { get; set; }
         public string UserId { get; set; }
+        public string Type { get; set; }
         public virtual IdentityUser User { get; set; }
         public int FromCurrencyId { get; set; }
         public virtual Currency FromCurrency { get; set; }

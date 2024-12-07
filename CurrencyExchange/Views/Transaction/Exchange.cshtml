@@ -1,0 +1,101 @@
+﻿@{
+    ViewData["Title"] = "Exchange Currency";
+    var wallet = ViewBag.UserWallet as List<Currency_exchange.Models.UserWallet>;
+    var currencies = ViewBag.Currencies as List<Currency_exchange.Models.Currency>;
+}
+
+<h2>Exchange Currency</h2>
+
+<form asp-action="Exchange" method="post">
+    <div class="row">
+        <!-- Waluta źródłowa -->
+        <div class="col-md-4">
+            <label for="fromCurrency">From Currency</label>
+            <select id="fromCurrency" name="fromCurrencyId" class="form-control" required>
+                <option value="">-- Select Currency --</option>
+                @foreach (var currency in wallet)
+                {
+                    <option value="@currency.CurrencyId">@currency.Currency.Code (@currency.Amount)</option>
+                }
+            </select>
+        </div>
+
+        <!-- Przelicznik -->
+        <div class="col-md-4 text-center align-self-center">
+            <label for="exchangeRate">Exchange Rate</label>
+            <input id="exchangeRate" name="exchangeRate" type="text" class="form-control text-center" readonly />
+        </div>
+
+        <!-- Waluta docelowa -->
+        <div class="col-md-4">
+            <label for="toCurrency">To Currency</label>
+            <select id="toCurrency" name="toCurrencyId" class="form-control" required>
+                <option value="">-- Select Currency --</option>
+                @foreach (var currency in currencies)
+                {
+                    <option value="@currency.Id">@currency.Code</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <label for="fromAmount">Amount to Exchange</label>
+            <input id="fromAmount" name="amountStr" type="number" class="form-control" min="0" step="0.01" />
+        </div>
+
+        <div class="col-md-6">
+            <label for="toAmount">Exchanged Amount</label>
+            <input id="toAmount" type="number" class="form-control" readonly />
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col text-center">
+            <button type="submit" class="btn btn-primary">Exchange</button>
+        </div>
+    </div>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const fromCurrency = document.getElementById("fromCurrency");
+        const toCurrency = document.getElementById("toCurrency");
+        const exchangeRate = document.getElementById("exchangeRate");
+        const fromAmount = document.getElementById("fromAmount");
+        const toAmount = document.getElementById("toAmount");
+
+        async function updateExchangeRate() {
+            const fromCurrencyId = fromCurrency.value;
+            const toCurrencyId = toCurrency.value;
+
+            if (fromCurrencyId && toCurrencyId) {
+                try {
+                    const response = await fetch(`/api/rate?fromCurrencyId=${fromCurrencyId}&toCurrencyId=${toCurrencyId}`);
+                    const rate = await response.json();
+                    exchangeRate.value = rate.toFixed(4);
+                    calculateToAmount();
+                } catch (error) {
+                    console.error("Failed to fetch exchange rate", error);
+                }
+            }
+        }
+
+        function calculateToAmount() {
+            const rate = parseFloat(exchangeRate.value);
+            const amount = parseFloat(fromAmount.value);
+            if (!isNaN(rate) && !isNaN(amount)) {
+                toAmount.value = (amount * rate).toFixed(2);
+            } else {
+                toAmount.value = "";
+            }
+        }
+
+        fromCurrency.addEventListener("change", updateExchangeRate);
+        toCurrency.addEventListener("change", updateExchangeRate);
+        fromAmount.addEventListener("input", calculateToAmount);
+
+        updateExchangeRate();
+    });
+</script>

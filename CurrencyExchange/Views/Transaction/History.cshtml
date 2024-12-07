@@ -12,8 +12,8 @@
             <th>Date</th>
             <th>From</th>
             <th>To</th>
-            <th>Amount</th>
-            <th>Exchange Rate</th>
+            <th>Transaction Exchange Rate</th>
+            <th>Transaction Type</th>
         </tr>
     </thead>
     <tbody>
@@ -21,9 +21,10 @@
         {
             <tr>
                 <td>@transaction.TransactionDate.ToLocalTime()</td>
-                <td>@transaction.FromAmount @transaction.FromCurrency?.Code</td>
-                <td>@transaction.ToAmount @transaction.ToCurrency?.Code</td>
-                <td>@transaction.ExchangeRate</td>
+                <td>@string.Format("{0:0.00####}", transaction.FromAmount) @transaction.FromCurrency?.Code</td>
+                <td>@string.Format("{0:0.00####}", transaction.ToAmount) @transaction.ToCurrency?.Code</td>
+                <td>@string.Format("{0:0.00####}", transaction.ExchangeRate)</td>
+                <td>@transaction.Type</td>
             </tr>
         }
     </tbody>
