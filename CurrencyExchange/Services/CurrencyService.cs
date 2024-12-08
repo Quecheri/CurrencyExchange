@@ -26,17 +26,33 @@
 
         private async void ClearDatabaseDO_NOT_USE()
         {
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM Transactions");
             await _context.Database.ExecuteSqlRawAsync("DELETE FROM UserWallets");
             await _context.Database.ExecuteSqlRawAsync("DELETE FROM Currencies");
         }
         public async Task UpdateCurrencyRatesAsync()
         {
-
             using (var client = new HttpClient())
             {
                 
                 if (NBPApi)
                 {
+                    var plnCurrency = await _context.Currencies.FirstOrDefaultAsync(c => c.Code == "PLN");
+                    if (plnCurrency != null)
+                    {
+                        plnCurrency.CurrentRate = 1.00m;
+                        plnCurrency.RateDate = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        _context.Currencies.Add(new Currency
+                        {
+                            Code = "PLN",
+                            Name = "polski złoty",
+                            CurrentRate = 1.00m,
+                            RateDate = DateTime.UtcNow
+                        });
+                    }
                     var tasks = new[]
                     {
                         client.GetStringAsync(CurrencySourceNBP),
@@ -78,6 +94,7 @@
                             }
                         }
                     }
+                    
 
                 }
                 else

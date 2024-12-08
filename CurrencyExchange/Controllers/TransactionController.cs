@@ -119,10 +119,14 @@ namespace CurrencyExchange.Controllers
                 return View();
             }
 
-            decimal exchangeRate = toCurrency.CurrentRate / fromCurrency.CurrentRate;
+            decimal exchangeRate = fromCurrency.CurrentRate / toCurrency.CurrentRate;
             decimal exchangedAmount = amount * exchangeRate;
 
             walletFrom.Amount -= amount;
+            if (walletFrom.Amount <= 0)
+            {
+                _context.UserWallets.Remove(walletFrom);
+            }
 
             if (walletTo != null)
             {
@@ -171,7 +175,7 @@ namespace CurrencyExchange.Controllers
                 return NotFound("One of the currencies was not found.");
             }
 
-            var exchangeRate = toCurrency.CurrentRate / fromCurrency.CurrentRate;
+            var exchangeRate = fromCurrency.CurrentRate / toCurrency.CurrentRate;
             return Json(exchangeRate);
         }
 
